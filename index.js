@@ -5,7 +5,7 @@ const app = express();
 app.use(express.json());
 
 // Pi App 설정
-const PI_API_KEY = "여기에_네_PI_API_KEY";
+const PI_API_KEY = "2241f64ff7214493742165fefa97eb135eeeec3d5c27e54c227ed44fed2023b482dbbcb372d2196cc4f504eb4f1448dec4c2cb39bae968b9b9e6c6914c49fe83";
 const PI_API_URL = "https://api.minepi.com";
 
 // Render에서 사용하는 포트
