@@ -4,20 +4,22 @@ import fetch from "node-fetch";
 const app = express();
 app.use(express.json());
 
-const PI_API_KEY = process.env.PI_API_KEY;
+// Pi App 설정
+const PI_API_KEY = "여기에_네_PI_API_KEY";
+const PI_API_URL = "https://api.minepi.com";
 
-// 서버 상태 확인
-app.get("/", (req, res) => {
-  res.send("BIOTEM Pi Server is running");
-});
+// Render에서 사용하는 포트
+const PORT = process.env.PORT || 3000;
 
-// 1️⃣ 결제 승인
+/**
+ * 1️⃣ 결제 승인 (approve)
+ */
 app.post("/approve", async (req, res) => {
   const { paymentId } = req.body;
 
   try {
     const response = await fetch(
-      `https://api.minepi.com/v2/payments/${paymentId}/approve`,
+      `${PI_API_URL}/v2/payments/${paymentId}/approve`,
       {
         method: "POST",
         headers: {
@@ -28,19 +30,22 @@ app.post("/approve", async (req, res) => {
     );
 
     const data = await response.json();
-    res.json(data);
+    res.json({ success: true, data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Approve error:", err);
+    res.status(500).json({ success: false });
   }
 });
 
-// 2️⃣ 결제 완료
+/**
+ * 2️⃣ 결제 완료 (complete)
+ */
 app.post("/complete", async (req, res) => {
   const { paymentId, txid } = req.body;
 
   try {
     const response = await fetch(
-      `https://api.minepi.com/v2/payments/${paymentId}/complete`,
+      `${PI_API_URL}/v2/payments/${paymentId}/complete`,
       {
         method: "POST",
         headers: {
@@ -52,11 +57,17 @@ app.post("/complete", async (req, res) => {
     );
 
     const data = await response.json();
-    res.json(data);
+    res.json({ success: true, data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Complete error:", err);
+    res.status(500).json({ success: false });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on", PORT));
+app.get("/", (req, res) => {
+  res.send("BIOTEM Pi Server is running");
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
