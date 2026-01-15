@@ -1,59 +1,62 @@
 import express from "express";
-import bodyParser from "body-parser";
-import cors from "cors";
+import fetch from "node-fetch";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(express.json());
 
-/**
- * Pi 서버 검증용 키
- * (나중에 Render 환경변수로 이동할 예정)
- */
-const PI_API_KEY = process.env.PI_API_KEY || "DEV_MODE";
+const PI_API_KEY = process.env.PI_API_KEY;
 
-/* ---------------- 기본 설정 ---------------- */
-app.use(cors());
-app.use(bodyParser.json());
-
+// 서버 상태 확인
 app.get("/", (req, res) => {
   res.send("BIOTEM Pi Server is running");
 });
 
-/* ---------------- Pi 결제 승인 단계 ---------------- */
-/**
- * Pi SDK 흐름상
- * 1. 클라이언트에서 createPayment
- * 2. onReadyForServerApproval → 여기 호출
- */
+// 1️⃣ 결제 승인
 app.post("/approve", async (req, res) => {
   const { paymentId } = req.body;
 
-  console.log("🔵 승인 요청 수신:", paymentId);
+  try {
+    const response = await fetch(
+      `https://api.minepi.com/v2/payments/${paymentId}/approve`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Key ${PI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  // 지금은 실제 Pi 서버 승인 없이 OK만 반환
-  return res.json({
-    success: true,
-    paymentId,
-    message: "Server approval OK (test mode)",
-  });
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-/**
- * 3. Pi 서버에서 결제 완료 통보 → 여기서 최종 완료
- */
+// 2️⃣ 결제 완료
 app.post("/complete", async (req, res) => {
   const { paymentId, txid } = req.body;
 
-  console.log("🟢 결제 완료:", paymentId, txid);
+  try {
+    const response = await fetch(
+      `https://api.minepi.com/v2/payments/${paymentId}/complete`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Key ${PI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ txid }),
+      }
+    );
 
-  return res.json({
-    success: true,
-    paymentId,
-    txid,
-  });
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-/* ---------------- 서버 시작 ---------------- */
-app.listen(PORT, () => {
-  console.log(`🚀 BIOTEM Pi Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Server running on", PORT));
