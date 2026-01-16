@@ -4,18 +4,39 @@ import fetch from "node-fetch";
 const app = express();
 app.use(express.json());
 
-// Pi App 설정
-const PI_API_KEY = "2241f64ff7214493742165fefa97eb135eeeec3d5c27e54c227ed44fed2023b482dbbcb372d2196cc4f504eb4f1448dec4c2cb39bae968b9b9e6c6914c49fe83";
+/**
+ * =========================
+ * Pi 설정
+ * =========================
+ * ⚠️ 실제 Pi App의 API Key
+ */
+const PI_API_KEY = "여기에_너의_PI_API_KEY_그대로";
 const PI_API_URL = "https://api.minepi.com";
 
-// Render에서 사용하는 포트
-const PORT = process.env.PORT || 3000;
+/**
+ * =========================
+ * Health Check
+ * =========================
+ */
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    time: new Date().toISOString(),
+  });
+});
 
 /**
+ * =========================
  * 1️⃣ 결제 승인 (approve)
+ * =========================
  */
 app.post("/approve", async (req, res) => {
   const { paymentId } = req.body;
+  console.log("▶ /approve called:", paymentId);
+
+  if (!paymentId) {
+    return res.status(400).json({ error: "paymentId missing" });
+  }
 
   try {
     const response = await fetch(
@@ -30,18 +51,27 @@ app.post("/approve", async (req, res) => {
     );
 
     const data = await response.json();
+    console.log("✅ approve response:", data);
+
     res.json({ success: true, data });
   } catch (err) {
-    console.error("Approve error:", err);
+    console.error("❌ approve error:", err);
     res.status(500).json({ success: false });
   }
 });
 
 /**
+ * =========================
  * 2️⃣ 결제 완료 (complete)
+ * =========================
  */
 app.post("/complete", async (req, res) => {
   const { paymentId, txid } = req.body;
+  console.log("▶ /complete called:", paymentId, txid);
+
+  if (!paymentId || !txid) {
+    return res.status(400).json({ error: "paymentId or txid missing" });
+  }
 
   try {
     const response = await fetch(
@@ -57,17 +87,21 @@ app.post("/complete", async (req, res) => {
     );
 
     const data = await response.json();
+    console.log("✅ complete response:", data);
+
     res.json({ success: true, data });
   } catch (err) {
-    console.error("Complete error:", err);
+    console.error("❌ complete error:", err);
     res.status(500).json({ success: false });
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("BIOTEM Pi Server is running");
-});
-
+/**
+ * =========================
+ * Render 포트
+ * =========================
+ */
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`🚀 Pi server running on port ${PORT}`);
 });
